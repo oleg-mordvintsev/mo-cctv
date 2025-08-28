@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  recorder:
+    image: jrottenberg/ffmpeg
+    container_name: cctv-recorder
+    restart: unless-stopped
+    volumes:
+      - ./records:/records
+      - ./scripts:/scripts
+    command: [
+      "-stimeout", "5000000",
+      "-rtsp_transport", "tcp",
+      "-i", "rtsp://192.168.0.121:554/0/av1",
+      "-c:v", "copy",
+      "-c:a", "aac",
+      "-f", "segment",
+      "-segment_time", "300",
+      "-segment_format", "mp4",
+      "-reset_timestamps", "1",
+      "-strftime", "1",
+      "-use_localtime", "1",
+      "-segment_clock", "clock_wall",
+      "-avoid_negative_ts", "make_zero",
+      "/records/camera1_%Y-%m-%d_%H-%M-%S.mp4"
+    ]
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 5
+        window: 60s
+
+  cleanup:
+    image: alpine
+    container_name: cctv-cleanup
+    restart: unless-stopped
+    volumes:
+      - ./records:/records
+      - ./scripts:/scripts
+    command: sh -c "while true; do /scripts/cleanup.sh; sleep 3600; done"
