@@ -24,7 +24,7 @@ services:
       "-reset_timestamps", "1",
       "-strftime", "1",
       "-avoid_negative_ts", "make_non_negative",
-      "/records/camera1_%Y-%m-%d_%H-%M-%S.mp4"
+      "/records/elevatorLobby_%Y-%m-%d_%H-%M-%S.mp4"
     ]
 
   cleanup:

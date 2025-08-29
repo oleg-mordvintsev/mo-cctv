@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>CCTV Video Player</title>
+    <title>MO-CCTV видео плеер</title>
     <meta charset="UTF-8">
     <style>
         * { box-sizing: border-box; }
@@ -77,40 +77,47 @@
 </head>
 <body>
 <div class="container">
-    <h1>CCTV Video Recordings</h1>
+    <h1>MO-CCTV видео записи</h1>
 
     <div class="player-container" id="playerContainer" style="display: none;">
-        <h2 id="currentVideoTitle">Select a video to play</h2>
-        <video id="videoPlayer" controls>
-            Your browser does not support the video tag.
-        </video>
+        <h2 id="currentVideoTitle">Выберите видео для воспроизведения</h2>
+        <video id="videoPlayer" controls>Видео тег не поддерживается вашим браузером</video>
     </div>
 
     <div class="video-list">
-        <h2>Available Recordings</h2>
+        <h2>Доступные видео записи</h2>
         <div id="videoList"></div>
-        <div id="loading" class="loading">Loading videos...</div>
-        <div id="noVideos" class="no-video" style="display: none;">
-            No video recordings found
-        </div>
+        <div id="loading" class="loading">Загрузка видео...</div>
+        <div id="noVideos" class="no-video" style="display: none;">Нет видео записей</div>
     </div>
 </div>
 
 <script>
     async function loadVideos() {
         try {
+            // Запрос к правильному endpoint для получения списка файлов
             const response = await fetch('/records/');
+            if (!response.ok) {
+                throw new Error('Что-то ');
+            }
+
             const text = await response.text();
             const parser = new DOMParser();
             const doc = parser.parseFromString(text, 'text/html');
 
             const links = Array.from(doc.querySelectorAll('a[href$=".mp4"]'))
                 .filter(link => !link.href.includes('index.html'))
-                .map(link => ({
-                    name: link.textContent,
-                    url: link.href,
-                    size: link.nextSibling?.textContent?.trim() || ''
-                }))
+                .map(link => {
+                    // Получаем только имя файла из URL
+                    const urlParts = link.href.split('/');
+                    const filename = urlParts[urlParts.length - 1];
+
+                    return {
+                        name: filename,
+                        url: `/records/${filename}`,
+                        size: link.nextSibling?.textContent?.trim() || ''
+                    };
+                })
                 .sort((a, b) => b.name.localeCompare(a.name)); // Новые сверху
 
             const videoList = document.getElementById('videoList');
@@ -128,11 +135,12 @@
                 const videoItem = document.createElement('div');
                 videoItem.className = 'video-item';
                 videoItem.innerHTML = `
-                        <h3>${video.name}</h3>
-                        <div class="size">${video.size}</div>
-                    `;
+                    <h3>${video.name}</h3>
+                    <div class="size">${video.size}</div>
+                `;
 
                 videoItem.addEventListener('click', () => {
+                    // Используем правильный URL для доступа к видео
                     playVideo(video.url, video.name);
                 });
 
@@ -143,7 +151,7 @@
             console.error('Error loading videos:', error);
             document.getElementById('loading').style.display = 'none';
             document.getElementById('noVideos').style.display = 'block';
-            document.getElementById('noVideos').textContent = 'Error loading videos';
+            document.getElementById('noVideos').textContent = 'Ошибка загрузки видео. Необходимо проверить конфигурацию.';
         }
     }
 
