@@ -40,6 +40,11 @@
             background: #e8f4fd;
             border-color: #007bff;
         }
+        .video-item.selected {
+            background: #d1ecff;
+            border-color: #007bff;
+            border-width: 2px;
+        }
         .video-item h3 {
             margin: 0;
             color: #555;
@@ -55,7 +60,7 @@
             top: 20px;
             background: white;
             padding: 20px;
-            border: 2px solid #007bff;
+            border: 2px solid #7c7c7c;
             border-radius: 8px;
             z-index: 10;
         }
@@ -299,6 +304,35 @@
         filterVideos();
     }
 
+    function formatDate(dateString) {
+        const [datePart, timePart] = dateString.split('_');
+        const [year, month, day] = datePart.split('-');
+        const [hour, minute, second] = timePart.split('-');
+
+        const inputDate = new Date(Date.UTC(
+            parseInt(year),
+            parseInt(month) - 1,
+            parseInt(day),
+            parseInt(hour),
+            parseInt(minute),
+            parseInt(second)
+        ));
+
+        // Русские названия месяцев
+        const months = [
+            'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+            'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
+        ];
+
+        const dayNum = inputDate.getUTCDate();
+        const monthName = months[inputDate.getUTCMonth()];
+        const yearNum = inputDate.getUTCFullYear();
+        const hours = inputDate.getUTCHours().toString().padStart(2, '0');
+        const minutes = inputDate.getUTCMinutes().toString().padStart(2, '0');
+
+        return `${dayNum} ${monthName} ${yearNum} ${hours}:${minutes}`;
+    }
+
     function displayVideos(videos) {
         const videoList = document.getElementById('videoList');
         videoList.innerHTML = '';
@@ -311,21 +345,29 @@
 
         document.getElementById('noVideos').style.display = 'none';
 
+        const currentVideoTitle = document.getElementById('currentVideoTitle').textContent;
+        const newestVideo = allVideos.length > 0 ? allVideos[0].name : null;
+
         videos.forEach((video, index) => {
             const videoItem = document.createElement('div');
             videoItem.className = 'video-item';
 
-            // Для первого видео (самого нового) добавляем предупреждение
-            const isNewest = index === 0 && !document.getElementById('dateSelect').value && !document.getElementById('prefixSelect').value;
+            // Проверяем, является ли это видео текущим выбранным
+            if (video.name === currentVideoTitle) {
+                videoItem.classList.add('selected');
+            }
+
+            // Проверяем, является ли это видео самым новым из всех доступных
+            const isNewest = video.name === newestVideo;
             const warningText = isNewest ?
                 '<div style="color: #ff6b6b; font-size: 14px; margin-top: 5px">⚠️ <i>Возможно, запись еще идет. Видео может не воспроизводиться</i></div>' :
                 '';
 
             videoItem.innerHTML = `
-                <h3>${video.name}</h3>
-                <div class="size">${video.size}</div>
-                ${warningText}
-            `;
+            <h3>${video.name}</h3>
+            <div class="size">${formatDate(video.dateString)}<!-- | ${video.size}--></div>
+            ${warningText}
+        `;
 
             videoItem.addEventListener('click', () => {
                 playVideo(video.url, video.name);
@@ -339,6 +381,19 @@
         const player = document.getElementById('videoPlayer');
         const container = document.getElementById('playerContainer');
         const titleElement = document.getElementById('currentVideoTitle');
+
+        // Убираем выделение со всех элементов
+        document.querySelectorAll('.video-item.selected').forEach(item => {
+            item.classList.remove('selected');
+        });
+
+        // Находим и выделяем выбранный элемент
+        const videoItems = document.querySelectorAll('.video-item');
+        videoItems.forEach(item => {
+            if (item.querySelector('h3').textContent === title) {
+                item.classList.add('selected');
+            }
+        });
 
         titleElement.textContent = title;
         player.src = url;
