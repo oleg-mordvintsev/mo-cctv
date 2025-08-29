@@ -57,6 +57,7 @@
             padding: 20px;
             border: 2px solid #007bff;
             border-radius: 8px;
+            z-index: 10;
         }
         video {
             width: 100%;
@@ -73,6 +74,26 @@
             padding: 20px;
             color: #666;
         }
+        .filter-container {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+            position: relative;
+            z-index: 5;
+        }
+        .filter-select {
+            padding: 8px 12px;
+            margin-right: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            background: white;
+        }
+        .filter-select:disabled {
+            background-color: #f8f9fa;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -86,6 +107,19 @@
 
     <div class="video-list">
         <h2>Доступные видео записи</h2>
+
+        <div class="filter-container" id="filterContainer" style="display: none;">
+            <select id="prefixSelect" class="filter-select" onchange="filterByPrefix()">
+                <option value="">Все камеры</option>
+            </select>
+            <select id="dateSelect" class="filter-select" onchange="filterByDate()">
+                <option value="">Выберите дату</option>
+            </select>
+            <select id="hourSelect" class="filter-select" onchange="filterByHour()">
+                <option value="">Выберите час</option>
+            </select>
+        </div>
+
         <div id="videoList"></div>
         <div id="loading" class="loading">Загрузка видео...</div>
         <div id="noVideos" class="no-video" style="display: none;">Нет видео записей</div>
@@ -93,59 +127,64 @@
 </div>
 
 <script>
+    let allVideos = [];
+    let filteredVideos = [];
+
     async function loadVideos() {
         try {
-            // Запрос к правильному endpoint для получения списка файлов
             const response = await fetch('/records/');
             if (!response.ok) {
-                throw new Error('Что-то ');
+                throw new Error('Ошибка загрузки');
             }
 
             const text = await response.text();
             const parser = new DOMParser();
             const doc = parser.parseFromString(text, 'text/html');
 
-            const links = Array.from(doc.querySelectorAll('a[href$=".mp4"]'))
+            allVideos = Array.from(doc.querySelectorAll('a[href$=".mp4"]'))
                 .filter(link => !link.href.includes('index.html'))
                 .map(link => {
-                    // Получаем только имя файла из URL
                     const urlParts = link.href.split('/');
                     const filename = urlParts[urlParts.length - 1];
+
+                    // Извлекаем дату из названия файла (последние 23 символа без расширения)
+                    const dateString = filename.slice(-23, -4);
+                    // Извлекаем префикс (всё что до даты)
+                    const prefix = filename.slice(0, -24);
+
+                    // Парсим дату и время
+                    const [datePart, timePart] = dateString.split('_');
+                    const [hour] = timePart.split('-');
 
                     return {
                         name: filename,
                         url: `/records/${filename}`,
-                        size: link.nextSibling?.textContent?.trim() || ''
+                        size: link.nextSibling?.textContent?.trim() || '',
+                        date: datePart, // "2025-08-29"
+                        hour: hour,     // "21"
+                        prefix: prefix, // префикс имени файла
+                        dateString: dateString // полная строка даты-времени
                     };
                 })
-                .sort((a, b) => b.name.localeCompare(a.name)); // Новые сверху
+                .sort((a, b) => b.name.localeCompare(a.name));
 
-            const videoList = document.getElementById('videoList');
             const loading = document.getElementById('loading');
             const noVideos = document.getElementById('noVideos');
 
             loading.style.display = 'none';
 
-            if (links.length === 0) {
+            if (allVideos.length === 0) {
                 noVideos.style.display = 'block';
                 return;
             }
 
-            links.forEach(video => {
-                const videoItem = document.createElement('div');
-                videoItem.className = 'video-item';
-                videoItem.innerHTML = `
-                    <h3>${video.name}</h3>
-                    <div class="size">${video.size}</div>
-                `;
+            // Показываем контейнер с фильтрами
+            document.getElementById('filterContainer').style.display = 'block';
 
-                videoItem.addEventListener('click', () => {
-                    // Используем правильный URL для доступа к видео
-                    playVideo(video.url, video.name);
-                });
-
-                videoList.appendChild(videoItem);
-            });
+            // Заполняем все фильтры
+            populateFilters();
+            // Показываем все видео по умолчанию
+            displayVideos(allVideos);
 
         } catch (error) {
             console.error('Error loading videos:', error);
@@ -153,6 +192,147 @@
             document.getElementById('noVideos').style.display = 'block';
             document.getElementById('noVideos').textContent = 'Ошибка загрузки видео. Необходимо проверить конфигурацию.';
         }
+    }
+
+    function populateFilters() {
+        populatePrefixFilter();
+        populateDateFilter();
+        updateHourSelectState();
+    }
+
+    function populatePrefixFilter() {
+        const prefixSelect = document.getElementById('prefixSelect');
+        // Получаем уникальные префиксы
+        const prefixes = [...new Set(allVideos.map(video => video.prefix))].sort();
+
+        prefixSelect.innerHTML = '<option value="">Все камеры</option>';
+        prefixes.forEach(prefix => {
+            const option = document.createElement('option');
+            option.value = prefix;
+            option.textContent = prefix || 'Без префикса';
+            prefixSelect.appendChild(option);
+        });
+    }
+
+    function populateDateFilter() {
+        const dateSelect = document.getElementById('dateSelect');
+        // Получаем уникальные даты и сортируем от новых к старым
+        const dates = [...new Set(allVideos.map(video => video.date))].sort().reverse();
+
+        dateSelect.innerHTML = '<option value="">Выберите дату</option>';
+        dates.forEach(date => {
+            const option = document.createElement('option');
+            option.value = date;
+            option.textContent = date;
+            dateSelect.appendChild(option);
+        });
+    }
+
+    function updateHourSelectState() {
+        const dateSelect = document.getElementById('dateSelect');
+        const hourSelect = document.getElementById('hourSelect');
+
+        if (dateSelect.value) {
+            hourSelect.disabled = false;
+            hourSelect.style.opacity = '1';
+            populateHourFilter();
+        } else {
+            hourSelect.disabled = true;
+            hourSelect.style.opacity = '0.6';
+            hourSelect.innerHTML = '<option value="">Сначала выберите дату</option>';
+        }
+    }
+
+    function populateHourFilter() {
+        const selectedDate = document.getElementById('dateSelect').value;
+        const selectedPrefix = document.getElementById('prefixSelect').value;
+        const hourSelect = document.getElementById('hourSelect');
+
+        if (selectedDate) {
+            // Получаем уникальные часы с учетом префикса и даты
+            const hours = [...new Set(allVideos
+                .filter(video => {
+                    const matchesDate = video.date === selectedDate;
+                    const matchesPrefix = !selectedPrefix || video.prefix === selectedPrefix;
+                    return matchesDate && matchesPrefix;
+                })
+                .map(video => video.hour)
+            )].sort((a, b) => parseInt(b) - parseInt(a)); // Новые часы сверху
+
+            hourSelect.innerHTML = '<option value="">Все часы</option>';
+            hours.forEach(hour => {
+                const option = document.createElement('option');
+                option.value = hour;
+                option.textContent = `${hour}:00`;
+                hourSelect.appendChild(option);
+            });
+        }
+    }
+
+    function filterVideos() {
+        const selectedPrefix = document.getElementById('prefixSelect').value;
+        const selectedDate = document.getElementById('dateSelect').value;
+        const selectedHour = document.getElementById('hourSelect').value;
+
+        filteredVideos = allVideos.filter(video => {
+            const matchesPrefix = !selectedPrefix || video.prefix === selectedPrefix;
+            const matchesDate = !selectedDate || video.date === selectedDate;
+            const matchesHour = !selectedHour || video.hour === selectedHour;
+
+            return matchesPrefix && matchesDate && matchesHour;
+        });
+
+        displayVideos(filteredVideos);
+    }
+
+    function filterByPrefix() {
+        updateHourSelectState();
+        filterVideos();
+    }
+
+    function filterByDate() {
+        updateHourSelectState();
+        filterVideos();
+    }
+
+    function filterByHour() {
+        filterVideos();
+    }
+
+    function displayVideos(videos) {
+        const videoList = document.getElementById('videoList');
+        videoList.innerHTML = '';
+
+        if (videos.length === 0) {
+            document.getElementById('noVideos').style.display = 'block';
+            document.getElementById('noVideos').textContent = 'Нет видео для выбранных фильтров';
+            return;
+        }
+
+        document.getElementById('noVideos').style.display = 'none';
+
+        videos.forEach((video, index) => {
+            const videoItem = document.createElement('div');
+            videoItem.className = 'video-item';
+
+            // Для первого видео (самого нового) добавляем предупреждение
+            const isNewest = index === 0 && !document.getElementById('dateSelect').value && !document.getElementById('prefixSelect').value;
+            const warningText = isNewest ?
+                '<div style="color: #ff6b6b; font-size: 14px; margin-top: 5px">⚠️ <i>Возможно, запись еще идет. Видео может не воспроизводиться</i></div>' :
+                '';
+
+            videoItem.innerHTML = `
+                <h3>${video.name}</h3>
+                <div class="size">${video.size}</div>
+                ${warningText}
+            `;
+
+            videoItem.addEventListener('click', () => {
+                playVideo(video.url, video.name);
+            });
+
+            videoList.appendChild(videoItem);
+        });
     }
 
     function playVideo(url, title) {
@@ -164,7 +344,6 @@
         player.src = url;
         container.style.display = 'block';
 
-        // Прокрутить к плееру
         container.scrollIntoView({ behavior: 'smooth' });
 
         player.play().catch(error => {
@@ -172,7 +351,6 @@
         });
     }
 
-    // Загружаем видео при загрузке страницы
     document.addEventListener('DOMContentLoaded', loadVideos);
 </script>
 </body>
