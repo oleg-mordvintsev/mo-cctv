@@ -1,7 +1,7 @@
 services:
   recorder:
     image: lscr.io/linuxserver/ffmpeg:latest
-    container_name: cctv-recorder
+    container_name: mo-cctv-recorder
     restart: unless-stopped
     network_mode: host
     environment:
@@ -15,7 +15,7 @@ services:
     command: [
       "-timeout", "5000000",
       "-rtsp_transport", "tcp",
-      "-i", "rtsp://192.168.0.121:554/0/av1",
+      "-i", "${RTSP_URL}",
       "-c:v", "copy",
       "-c:a", "aac", "-b:a", "32k", "-ac", "1",
       "-f", "segment",
@@ -24,12 +24,12 @@ services:
       "-reset_timestamps", "1",
       "-strftime", "1",
       "-avoid_negative_ts", "make_non_negative",
-      "/records/elevatorLobby_%Y-%m-%d_%H-%M-%S.mp4"
+      "/records/${CAMERA_PREFIX}_%Y-%m-%d_%H-%M-%S.mp4"
     ]
 
   cleanup:
     image: alpine:latest
-    container_name: cctv-cleanup
+    container_name: mo-cctv-cleanup
     restart: unless-stopped
     user: "1000:1000"
     volumes:
@@ -39,7 +39,7 @@ services:
 
   web:
     image: nginx:alpine
-    container_name: cctv-web
+    container_name: mo-cctv-web
     restart: unless-stopped
     ports:
       - "8888:80"
@@ -51,6 +51,7 @@ services:
       - ./records:/usr/share/nginx/html/records
       - ./web:/usr/share/nginx/html
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/.htpasswd:/etc/nginx/.htpasswd
       - ./nginx/cache:/var/cache/nginx
       - ./nginx/temp:/var/run
     depends_on:
