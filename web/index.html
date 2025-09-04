@@ -346,7 +346,12 @@
         document.getElementById('noVideos').style.display = 'none';
 
         const currentVideoTitle = document.getElementById('currentVideoTitle').textContent;
-        const newestVideo = allVideos.length > 0 ? allVideos[0].name : null;
+        const newestVideosByCamera = {};
+        allVideos.forEach(v => {
+            if (!newestVideosByCamera[v.prefix] || v.name > newestVideosByCamera[v.prefix]) {
+                newestVideosByCamera[v.prefix] = v.name;
+            }
+        });
 
         videos.forEach((video, index) => {
             const videoItem = document.createElement('div');
@@ -358,7 +363,7 @@
             }
 
             // Проверяем, является ли это видео самым новым из всех доступных
-            const isNewest = video.name === newestVideo;
+            const isNewest = newestVideosByCamera[video.prefix] === video.name;
             const warningText = isNewest ?
                 '<div style="color: #ff6b6b; font-size: 14px; margin-top: 5px">⚠️ <i>Возможно, запись еще идет. Видео может не воспроизводиться</i></div>' :
                 '';
