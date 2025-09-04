@@ -83,27 +83,21 @@ if [ -f ".env" ]; then
     echo "Найдены учетные данные: пользователь=$NGINX_USER"
 fi
 
-# Создание
-if command -v htpasswd &> /dev/null; then
-    if [ -n "$NGINX_USER" ] && [ -n "$NGINX_PASSWORD" ]; then
-        htpasswd -b -c nginx/.htpasswd "$NGINX_USER" "$NGINX_PASSWORD"
-        echo "✓ Файл .htpasswd создан с помощью htpasswd"
-    else
-        echo "⚠️  Не удалось прочитать учетные данные из .env файла"
-    fi
-else
-    echo "⚠️  htpasswd не установлен. Используем openssl..."
-    if [ -n "$NGINX_USER" ] && [ -n "$NGINX_PASSWORD" ]; then
-        echo "$NGINX_USER:$(openssl passwd -5 "$NGINX_PASSWORD")" > nginx/.htpasswd
-        echo "✓ Файл .htpasswd создан с помощью openssl"
-    else
-        echo "⚠️  Не удалось создать .htpasswd автоматически"
-        echo "Создайте вручную: echo 'admin:\$(openssl passwd -crypt ваш_пароль)' > nginx/.htpasswd"
-    fi
-fi
+# Создание файла аутентификации
+if [ -n "$NGINX_USER" ] && [ -n "$NGINX_PASSWORD" ]; then
+    # Всегда используем openssl для единообразия
+    echo "$NGINX_USER:$(openssl passwd -5 "$NGINX_PASSWORD")" > nginx/.htpasswd
+    echo "✓ Файл .htpasswd создан с помощью openssl"
 
-chmod 644 nginx/.htpasswd
-chown 1000:1000 nginx/.htpasswd 2>/dev/null || true
+    # Устанавливаем права доступа
+    chmod 644 nginx/.htpasswd
+    chown 1000:1000 nginx/.htpasswd 2>/dev/null || true
+else
+    echo "⚠️  Не удалось прочитать учетные данные из переменных окружения"
+    echo "Убедитесь, что NGINX_USER и NGINX_PASSWORD установлены"
+    echo "Или создайте файл вручную:"
+    echo "echo 'admin:\$(openssl passwd -5 ваш_пароль)' > nginx/.htpasswd"
+fi
 
 echo ""
 echo "=== Установка завершена ==="
@@ -115,7 +109,7 @@ echo "   - Установите префикс названия камеры CAM
 echo "   - Измените NGINX_USER и NGINX_PASSWORD при необходимости"
 echo ""
 echo "2. Запустите систему:"
-echo "   docker-compose up -d"
+echo "   ./start.sh"
 echo ""
 echo "3. Откройте веб-интерфейс:"
 echo "   http://ваш-сервер:8888"
