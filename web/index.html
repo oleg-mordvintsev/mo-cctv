@@ -150,7 +150,7 @@
                 .filter(link => !link.href.includes('index.html'))
                 .map(link => {
                     const urlParts = link.href.split('/');
-                    const filename = urlParts[urlParts.length - 1];
+                    const filename = decodeURIComponent(urlParts[urlParts.length - 1]);
 
                     // Извлекаем дату из названия файла (последние 23 символа без расширения)
                     const dateString = filename.slice(-23, -4);
