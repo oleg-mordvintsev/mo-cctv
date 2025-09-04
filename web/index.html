@@ -164,7 +164,7 @@
                     return {
                         name: filename,
                         url: `/records/${filename}`,
-                        size: link.nextSibling?.textContent?.trim() || '',
+                        size: extractFileSize(link.nextSibling?.textContent?.trim() || ''),
                         date: datePart, // "2025-08-29"
                         hour: hour,     // "21"
                         prefix: prefix, // префикс имени файла
@@ -333,6 +333,12 @@
         return `${dayNum} ${monthName} ${yearNum} ${hours}:${minutes}`;
     }
 
+    function extractFileSize(text) {
+        // Разделяем по пробелам и берем последнюю часть (размер файла)
+        const parts = text.split(/\s+/);
+        return parts.length > 0 ? parts[parts.length - 1] : '0';
+    }
+
     function displayVideos(videos) {
         const videoList = document.getElementById('videoList');
         videoList.innerHTML = '';
@@ -370,7 +376,7 @@
 
             videoItem.innerHTML = `
             <h3>${video.name}</h3>
-            <div class="size">${formatDate(video.dateString)}<!-- | ${video.size}--></div>
+            <div class="size">${formatDate(video.dateString)} | ${video.size}</div>
             ${warningText}
         `;
 
