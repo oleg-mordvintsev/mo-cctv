@@ -1,5 +1,5 @@
 services:
-  recorder:
+  recorder-1:
     image: lscr.io/linuxserver/ffmpeg:latest
     container_name: mo-cctv-recorder
     restart: unless-stopped
@@ -15,7 +15,7 @@ services:
     command: [
       "-timeout", "5000000",
       "-rtsp_transport", "tcp",
-      "-i", "${RTSP_URL}",
+      "-i", "${RTSP_URL_1}",
       "-c:v", "copy",
       "-c:a", "aac", "-b:a", "32k", "-ac", "1",
       "-f", "segment",
@@ -24,8 +24,36 @@ services:
       "-reset_timestamps", "1",
       "-strftime", "1",
       "-avoid_negative_ts", "make_non_negative",
-      "/records/${CAMERA_PREFIX}_%Y-%m-%d_%H-%M-%S.mp4"
+      "/records/${CAMERA_PREFIX_1}_%Y-%m-%d_%H-%M-%S.mp4"
     ]
+
+#  recorder-2:
+#    image: lscr.io/linuxserver/ffmpeg:latest
+#    container_name: mo-cctv-recorder
+#    restart: unless-stopped
+#    network_mode: host
+#    environment:
+#      - PUID=1000
+#      - PGID=1000
+#      - TZ=Asia/Yekaterinburg #Europe/Moscow
+#    user: "1000:1000"
+#    volumes:
+#      - ./records:/records
+#      - ./scripts:/scripts
+#    command: [
+#      "-timeout", "5000000",
+#      "-rtsp_transport", "tcp",
+#      "-i", "${RTSP_URL_2}",
+#      "-c:v", "copy",
+#      "-c:a", "aac", "-b:a", "32k", "-ac", "1",
+#      "-f", "segment",
+#      "-segment_time", "300",
+#      "-segment_format", "mp4",
+#      "-reset_timestamps", "1",
+#      "-strftime", "1",
+#      "-avoid_negative_ts", "make_non_negative",
+#      "/records/${CAMERA_PREFIX_2}_%Y-%m-%d_%H-%M-%S.mp4"
+#    ]
 
   cleanup:
     image: alpine:latest
@@ -57,4 +85,5 @@ services:
       - ./nginx/cache:/var/cache/nginx
       - ./nginx/temp:/var/run
     depends_on:
-      - recorder
+      - recorder-1
+#     - recorder-2

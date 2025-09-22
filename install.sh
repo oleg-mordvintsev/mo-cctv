@@ -56,12 +56,12 @@ NGINX_PASSWORD=$(openssl rand -base64 12)
 HOURS_TO_KEEP=168
 
 # Настройки камеры №1
-RTSP_URL=rtsp://192.168.0.121:554/0/av1
-CAMERA_PREFIX=ЛифтовойХолл
+RTSP_URL_1=rtsp://192.168.0.121:554/0/av1
+CAMERA_PREFIX_1=ЛифтовойХолл
 
 # Настройки камеры №2
-#RTSP_URL=rtsp://server:554
-#CAMERA_PREFIX=SecondCam
+#RTSP_URL_2=rtsp://server:554
+#CAMERA_PREFIX_2=SecondCam
 EOF
     echo "✓ Создан .env файл со случайным паролем"
     echo "Пожалуйста, проверьте и отредактируйте .env файл для вашей конфигурации!"
@@ -113,8 +113,8 @@ echo "=== Установка завершена ==="
 echo ""
 echo "Следующие шаги:"
 echo "1. Просмотрите и отредактируйте .env файл:"
-echo "   - Установите ваш RTSP_URL"
-echo "   - Установите префикс названия камеры CAMERA_PREFIX"
+echo "   - Установите ваш адрес камеры RTSP_URL_1"
+echo "   - Установите префикс названия камеры CAMERA_PREFIX_1"
 echo "   - Измените NGINX_USER и NGINX_PASSWORD при необходимости"
 echo ""
 echo "2. Запустите систему:"
