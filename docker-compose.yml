@@ -32,6 +32,8 @@ services:
     container_name: mo-cctv-cleanup
     restart: unless-stopped
     user: "1000:1000"
+    environment:
+      - HOURS_TO_KEEP=${HOURS_TO_KEEP}
     volumes:
       - ./records:/records
       - ./scripts:/scripts

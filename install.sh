@@ -42,6 +42,7 @@ chmod +x scripts/cleanup.sh
 chmod +x start.sh
 chmod +x stop.sh
 chmod +x restart.sh
+chmod +x noPass.sh
 
 # Создание файла окружения для учетных данных если не существует
 if [ ! -f ".env" ]; then
@@ -51,8 +52,16 @@ if [ ! -f ".env" ]; then
 NGINX_USER=admin
 NGINX_PASSWORD=$(openssl rand -base64 12)
 
+# Сколько часов храним видео?
+HOURS_TO_KEEP=168
+
+# Настройки камеры №1
 RTSP_URL=rtsp://192.168.0.121:554/0/av1
-CAMERA_PREFIX=ElevatorLobby
+CAMERA_PREFIX=ЛифтовойХолл
+
+# Настройки камеры №2
+#RTSP_URL=rtsp://server:554
+#CAMERA_PREFIX=SecondCam
 EOF
     echo "✓ Создан .env файл со случайным паролем"
     echo "Пожалуйста, проверьте и отредактируйте .env файл для вашей конфигурации!"

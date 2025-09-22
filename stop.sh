@@ -2,4 +2,4 @@
 
 docker-compose down && sleep 3
 
-echo "✓ приложение остановлено"
+echo "✓ Приложение остановлено"
