@@ -1,5 +1,6 @@
 #!/bin/bash
 
-docker-compose down && sleep 3 && docker-compose up -d
-
+./stop.sh
+sleep 3
+./start.sh
 echo "✓ Приложение перезапущено"
