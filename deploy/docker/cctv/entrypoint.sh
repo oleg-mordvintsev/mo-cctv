@@ -1,6 +1,13 @@
 #!/bin/bash
 set -e
 
+if [ -z "$RTSP_URL_1" ]; then
+    echo "ОШИБКА: RTSP_URL_1 не задан"
+    exit 1
+fi
+
+: "${SEGMENT_TIME:=120}"
+
 (
     while true; do
         /scripts/cleanup.sh
@@ -17,7 +24,7 @@ set -e
             -c:v copy \
             -c:a aac -b:a 32k -ac 1 \
             -f segment \
-            -segment_time 300 \
+            -segment_time "${SEGMENT_TIME}" \
             -segment_format mp4 \
             -reset_timestamps 1 \
             -strftime 1 \

@@ -47,12 +47,13 @@ if [ ! -f ".env" ]; then
 # MO-CCTV Конфигурация окружения
 REGISTRY_URL=registry.mordvincev.ru
 RECORDS_PATH=./records
+SEGMENT_TIME=120
 
 NGINX_USER=admin
 NGINX_PASSWORD=$(openssl rand -base64 12)
 
-# Сколько часов храним видео?
-HOURS_TO_KEEP=168
+# Сколько часов храним видео? (30 дней = 720 часов)
+HOURS_TO_KEEP=720
 
 # Настройки камеры №1
 RTSP_URL_1=rtsp://192.168.0.121:554/0/av1
@@ -117,6 +118,8 @@ echo "Следующие шаги:"
 echo "1. Просмотрите и отредактируйте .env файл:"
 echo "   - Установите REGISTRY_URL (если используете registry)"
 echo "   - Установите RECORDS_PATH (путь к директории с видео)"
+echo "   - Установите SEGMENT_TIME (длительность сегмента в секундах)"
+echo "   - Установите HOURS_TO_KEEP (сколько часов хранить записи)"
 echo "   - Установите RTSP_URL_1 (адрес камеры)"
 echo "   - Установите CAMERA_PREFIX_1 (префикс имени камеры)"
 echo ""

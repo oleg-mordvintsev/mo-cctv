@@ -1,6 +1,6 @@
 FROM alpine:latest
 
-RUN apk add --no-cache ffmpeg nginx openssl bash
+RUN apk add --no-cache ffmpeg nginx bash
 
 WORKDIR /app
 
