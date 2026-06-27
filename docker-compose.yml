@@ -4,8 +4,6 @@ services:
     build:
       context: .
       dockerfile: deploy/docker/cctv/Dockerfile
-    ports:
-      - "8888:80"
     environment:
       - RTSP_URL_1=${RTSP_URL_1}
       - CAMERA_PREFIX_1=${CAMERA_PREFIX_1}
@@ -20,3 +18,9 @@ services:
       replicas: 1
       restart_policy:
         condition: any
+    networks:
+      - traefik-public
+
+networks:
+  traefik-public:
+    external: true

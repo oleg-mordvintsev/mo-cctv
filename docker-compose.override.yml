@@ -1,0 +1,4 @@
+services:
+  cctv:
+    ports:
+      - "8888:80"

@@ -4,4 +4,4 @@ if [ ! -f .init-done ]; then
     ./init.sh
 fi
 
-docker compose up --build
+docker compose -f docker-compose.yml -f docker-compose.override.yml up --build
