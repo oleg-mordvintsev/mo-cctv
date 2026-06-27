@@ -1,10 +1,23 @@
 #!/bin/bash
 
-# MO-CCTV Установщик
+# MO-CCTV Инициализация
 
-set -e # Выход при ошибке
+set -e
 
-echo "=== Установка MO-CCTV ==="
+if [ -f ".init-done" ]; then
+    read -p "Файл .init-done найден. Запустить инициализацию заново? (y/N): " confirm
+    case "$confirm" in
+        [yY]) ;;
+        *) exit 0 ;;
+    esac
+fi
+
+echo "=== Инициализация MO-CCTV ==="
+
+if [ -d ".git" ]; then
+    echo "Обновление репозитория..."
+    git pull --ff-only
+fi
 
 # Проверка установленного Docker
 if ! command -v docker &> /dev/null; then
@@ -14,41 +27,27 @@ if ! command -v docker &> /dev/null; then
 fi
 
 # Проверка Docker Compose
-if ! docker compose version &> /dev/null && ! command -v docker-compose &> /dev/null; then
+if ! docker compose version &> /dev/null; then
     echo "ОШИБКА: Docker Compose не установлен. Пожалуйста, сначала установите Docker Compose."
     exit 1
 fi
 
 echo "✓ Docker и Docker Compose установлены."
 
-# Клонирование или обновление репозитория
-if [ -d ".git" ]; then
-    echo "✓ Репозиторий уже клонирован. Обновление..."
-    git pull
-else
-    echo "Клонирование репозитория..."
-    git clone git@github.com:oleg-mordvintsev/mo-cctv.git .
-fi
-
 # Создание необходимых директорий
 echo "Создание необходимых директорий и установка прав..."
-mkdir -p records nginx/cache nginx/temp scripts web
-chown -R 1000:1000 records nginx/cache nginx/temp
-chmod -R 755 records nginx/cache nginx/temp scripts
+mkdir -p records nginx
+chown -R 1000:1000 records nginx 2>/dev/null || true
+chmod -R 755 records nginx
 
-# Установка прав на скрипт очистки
-echo "Установка прав на скрипты..."
-chmod +x scripts/cleanup.sh
-chmod +x start.sh
-chmod +x stop.sh
-chmod +x restart.sh
-chmod +x noPass.sh
-
-# Создание файла окружения для учетных данных если не существует
+# Создание файла окружения если не существует
 if [ ! -f ".env" ]; then
-    echo "Создание .env файла для учетных данных..."
+    echo "Создание .env файла..."
     cat > .env << EOF
 # MO-CCTV Конфигурация окружения
+REGISTRY_URL=registry.mordvincev.ru
+RECORDS_PATH=./records
+
 NGINX_USER=admin
 NGINX_PASSWORD=$(openssl rand -base64 12)
 
@@ -79,26 +78,20 @@ fi
 # Настройка базовой аутентификации nginx
 echo "Настройка базовой аутентификации nginx..."
 
-# Читаем переменные из .env файла
 if [ -f ".env" ]; then
-    # Загружаем переменные из .env
     NGINX_USER=$(grep -E "^NGINX_USER=" .env | cut -d '=' -f2)
     NGINX_PASSWORD=$(grep -E "^NGINX_PASSWORD=" .env | cut -d '=' -f2)
 
-    # Убираем кавычки если есть
     NGINX_USER=$(echo $NGINX_USER | sed "s/['\"]//g")
     NGINX_PASSWORD=$(echo $NGINX_PASSWORD | sed "s/['\"]//g")
 
     echo "Найдены учетные данные: пользователь=$NGINX_USER"
 fi
 
-# Создание файла аутентификации
 if [ -n "$NGINX_USER" ] && [ -n "$NGINX_PASSWORD" ]; then
-    # Всегда используем openssl для единообразия
     echo "$NGINX_USER:$(openssl passwd -5 "$NGINX_PASSWORD")" > nginx/.htpasswd
     echo "✓ Файл .htpasswd создан с помощью openssl"
 
-    # Устанавливаем права доступа
     chmod 644 nginx/.htpasswd
     chown 1000:1000 nginx/.htpasswd 2>/dev/null || true
 else
@@ -108,14 +101,24 @@ else
     echo "echo 'admin:\$(openssl passwd -5 ваш_пароль)' > nginx/.htpasswd"
 fi
 
+# Установка прав на скрипты
+chmod +x start.sh stop.sh start-dev.sh build-push.sh 2>/dev/null || true
+
+touch .init-done
+
+if ! grep -qxF '.init-done' .gitignore 2>/dev/null; then
+    echo '.init-done' >> .gitignore
+fi
+
 echo ""
-echo "=== Установка завершена ==="
+echo "=== Инициализация завершена ==="
 echo ""
 echo "Следующие шаги:"
 echo "1. Просмотрите и отредактируйте .env файл:"
-echo "   - Установите ваш адрес камеры RTSP_URL_1"
-echo "   - Установите префикс названия камеры CAMERA_PREFIX_1"
-echo "   - Измените NGINX_USER и NGINX_PASSWORD при необходимости"
+echo "   - Установите REGISTRY_URL (если используете registry)"
+echo "   - Установите RECORDS_PATH (путь к директории с видео)"
+echo "   - Установите RTSP_URL_1 (адрес камеры)"
+echo "   - Установите CAMERA_PREFIX_1 (префикс имени камеры)"
 echo ""
 echo "2. Запустите систему:"
 echo "   ./start.sh"
@@ -123,12 +126,3 @@ echo ""
 echo "3. Откройте веб-интерфейс:"
 echo "   http://ваш-сервер:8888"
 echo ""
-if [ -f ".env" ] && [ -n "$NGINX_USER" ] && [ -n "$NGINX_PASSWORD" ]; then
-    echo "   Логин: $NGINX_USER"
-    echo "   Пароль: $NGINX_PASSWORD"
-else
-    echo "   Логин и пароль смотрите в .env файле"
-fi
-echo ""
-echo "4. Для просмотра логов:"
-echo "   docker-compose logs -f"

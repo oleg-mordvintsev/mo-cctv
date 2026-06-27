@@ -1,8 +1,4 @@
 #!/bin/bash
 
-docker-compose down
-if [ ! -f "nginx/.htpasswd" ]; then
-    rm -R -f nginx/.htpasswd
-fi
-sleep 3
+docker stack rm mo-cctv
 echo "✓ Приложение остановлено"

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
     <title>MO-CCTV видео плеер</title>
     <meta charset="UTF-8">
@@ -114,13 +114,13 @@
         <h2>Доступные видео записи</h2>
 
         <div class="filter-container" id="filterContainer" style="display: none;">
-            <select id="prefixSelect" class="filter-select" onchange="filterByPrefix()">
+            <select id="prefixSelect" class="filter-select" onchange="filterByPrefix()" aria-label="Фильтр по камере">
                 <option value="">Все камеры</option>
             </select>
-            <select id="dateSelect" class="filter-select" onchange="filterByDate()">
+            <select id="dateSelect" class="filter-select" onchange="filterByDate()" aria-label="Фильтр по дате">
                 <option value="">Выберите дату</option>
             </select>
-            <select id="hourSelect" class="filter-select" onchange="filterByHour()">
+            <select id="hourSelect" class="filter-select" onchange="filterByHour()" aria-label="Фильтр по часу">
                 <option value="">Выберите час</option>
             </select>
         </div>
@@ -359,7 +359,7 @@
             }
         });
 
-        videos.forEach((video, index) => {
+        videos.forEach((video) => {
             const videoItem = document.createElement('div');
             videoItem.className = 'video-item';
 

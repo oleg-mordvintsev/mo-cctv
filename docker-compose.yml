@@ -1,89 +1,21 @@
 services:
-  recorder-1:
-    image: lscr.io/linuxserver/ffmpeg:latest
-    container_name: mo-cctv-recorder
-    restart: unless-stopped
-    network_mode: host
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Asia/Yekaterinburg #Europe/Moscow
-    user: "1000:1000"
-    volumes:
-      - ./records:/records
-      - ./scripts:/scripts
-    command: [
-      "-timeout", "5000000",
-      "-rtsp_transport", "tcp",
-      "-i", "${RTSP_URL_1}",
-      "-c:v", "copy",
-      "-c:a", "aac", "-b:a", "32k", "-ac", "1",
-      "-f", "segment",
-      "-segment_time", "300",
-      "-segment_format", "mp4",
-      "-reset_timestamps", "1",
-      "-strftime", "1",
-      "-avoid_negative_ts", "make_non_negative",
-      "/records/${CAMERA_PREFIX_1}_%Y-%m-%d_%H-%M-%S.mp4"
-    ]
-
-#  recorder-2:
-#    image: lscr.io/linuxserver/ffmpeg:latest
-#    container_name: mo-cctv-recorder
-#    restart: unless-stopped
-#    network_mode: host
-#    environment:
-#      - PUID=1000
-#      - PGID=1000
-#      - TZ=Asia/Yekaterinburg #Europe/Moscow
-#    user: "1000:1000"
-#    volumes:
-#      - ./records:/records
-#      - ./scripts:/scripts
-#    command: [
-#      "-timeout", "5000000",
-#      "-rtsp_transport", "tcp",
-#      "-i", "${RTSP_URL_2}",
-#      "-c:v", "copy",
-#      "-c:a", "aac", "-b:a", "32k", "-ac", "1",
-#      "-f", "segment",
-#      "-segment_time", "300",
-#      "-segment_format", "mp4",
-#      "-reset_timestamps", "1",
-#      "-strftime", "1",
-#      "-avoid_negative_ts", "make_non_negative",
-#      "/records/${CAMERA_PREFIX_2}_%Y-%m-%d_%H-%M-%S.mp4"
-#    ]
-
-  cleanup:
-    image: alpine:latest
-    container_name: mo-cctv-cleanup
-    restart: unless-stopped
-    user: "1000:1000"
-    environment:
-      - HOURS_TO_KEEP=${HOURS_TO_KEEP}
-    volumes:
-      - ./records:/records
-      - ./scripts:/scripts
-    command: sh -c "while true; do /scripts/cleanup.sh; sleep 3600; done"
-
-  web:
-    image: nginx:alpine
-    container_name: mo-cctv-web
-    restart: unless-stopped
+  cctv:
+    image: ${REGISTRY_URL}/mo-cctv/cctv:latest
+    build:
+      context: .
+      dockerfile: deploy/docker/cctv/Dockerfile
     ports:
       - "8888:80"
-    user: "1000:1000"
     environment:
-      - PUID=1000
-      - PGID=1000
+      - RTSP_URL_1=${RTSP_URL_1}
+      - CAMERA_PREFIX_1=${CAMERA_PREFIX_1}
+      - HOURS_TO_KEEP=${HOURS_TO_KEEP}
+      - TZ=Asia/Yekaterinburg
     volumes:
-      - ./records:/usr/share/nginx/html/records
-      - ./web:/usr/share/nginx/html
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./nginx/.htpasswd:/etc/nginx/.htpasswd
-      - ./nginx/cache:/var/cache/nginx
-      - ./nginx/temp:/var/run
-    depends_on:
-      - recorder-1
-#     - recorder-2
+      - ${RECORDS_PATH}:/records
+      - ./nginx/.htpasswd:/etc/nginx/.htpasswd:ro
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: any

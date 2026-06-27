@@ -1,6 +1,5 @@
 records
 .idea
 .env
-nginx/cache
-nginx/temp
 nginx/.htpasswd
+.init-done
