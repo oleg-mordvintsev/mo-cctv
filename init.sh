@@ -2,6 +2,9 @@
 
 # MO-CCTV Инициализация
 
+echo "Синхронизация с репозиторием..."
+git pull --ff-only
+
 set -e
 
 if [ -f ".init-done" ]; then
@@ -13,11 +16,6 @@ if [ -f ".init-done" ]; then
 fi
 
 echo "=== Инициализация MO-CCTV ==="
-
-if [ -d ".git" ]; then
-    echo "Обновление репозитория..."
-    git pull --ff-only
-fi
 
 # Проверка установленного Docker
 if ! command -v docker &> /dev/null; then
