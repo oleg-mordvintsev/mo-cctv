@@ -4,10 +4,10 @@ RUN apk add --no-cache ffmpeg nginx bash
 
 WORKDIR /app
 
-COPY nginx/nginx.conf /etc/nginx/nginx.conf
-COPY web/index.html /usr/share/nginx/html/index.html
-COPY scripts/cleanup.sh /scripts/cleanup.sh
-COPY entrypoint.sh /entrypoint.sh
+COPY deploy/docker/cctv/nginx/nginx.conf /etc/nginx/nginx.conf
+COPY deploy/docker/cctv/web/index.html /usr/share/nginx/html/index.html
+COPY deploy/docker/cctv/scripts/cleanup.sh /scripts/cleanup.sh
+COPY deploy/docker/cctv/entrypoint.sh /entrypoint.sh
 
 RUN chmod +x /entrypoint.sh /scripts/cleanup.sh
 
