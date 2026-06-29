@@ -9,7 +9,7 @@ services:
       - CAMERA_PREFIX_1=${CAMERA_PREFIX_1}
       - SEGMENT_TIME=${SEGMENT_TIME}
       - HOURS_TO_KEEP=${HOURS_TO_KEEP}
-      - TZ=Asia/Yekaterinburg
+      - TZ=${TZ}
     volumes:
       - ${RECORDS_PATH}:/records
       - ./nginx/.htpasswd:/etc/nginx/.htpasswd:ro

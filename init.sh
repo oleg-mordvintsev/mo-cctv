@@ -46,6 +46,9 @@ if [ ! -f ".env" ]; then
 REGISTRY_URL=registry.mordvincev.ru
 RECORDS_PATH=./records
 SEGMENT_TIME=120
+# Часовой пояс контейнера (влияет на имена видеофайлов и время в autoindex)
+# Варианты: UTC, Europe/Moscow, Asia/Yekaterinburg
+TZ=UTC
 
 NGINX_USER=admin
 NGINX_PASSWORD=$(openssl rand -base64 12)

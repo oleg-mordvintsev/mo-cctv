@@ -1,6 +1,6 @@
 FROM alpine:latest
 
-RUN apk add --no-cache ffmpeg nginx bash
+RUN apk add --no-cache ffmpeg nginx bash tzdata
 
 WORKDIR /app
 
