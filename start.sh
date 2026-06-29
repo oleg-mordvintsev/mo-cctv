@@ -13,5 +13,5 @@ if [ -z "${RECORDS_PATH}" ]; then
     exit 1
 fi
 
-docker stack deploy -c docker-compose.yml mo-cctv
+docker stack deploy -c docker-compose.yml srv-cctv
 echo "✓ Приложение запущено в режиме Swarm"

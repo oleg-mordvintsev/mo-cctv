@@ -1,4 +1,4 @@
 #!/bin/bash
 
-docker stack rm mo-cctv
+docker stack rm srv-cctv
 echo "✓ Приложение остановлено"
